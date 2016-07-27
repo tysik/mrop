@@ -1,0 +1,212 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /TF1
+        - /TF1/Frames1
+      Splitter Ratio: 0.624535
+    Tree Height: 393
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded: ~
+    Name: Tool Properties
+    Splitter Ratio: 0.588679
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: ""
+  - Class: Automatic Controller
+    Name: Automatic Controller
+  - Class: Manual Controller
+    Name: Manual Controller
+  - Class: Controls Scaling
+    Name: Controls Scaling
+  - Class: Reference Generator
+    Name: Reference Generator
+  - Class: Simulator
+    Name: Simulator
+  - Class: Obstacle Controller
+    Name: Obstacle Controller
+  - Class: MTracker
+    Name: MTracker
+  - Class: Reference Generator
+    Name: Reference Generator
+  - Class: Data Recorder
+    Name: Data Recorder
+  - Class: State Estimator
+    Name: State Estimator
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 0.25
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.03
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 100
+      Reference Frame: world
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 999
+      Frames:
+        All Enabled: true
+        virtual:
+          Value: true
+        world:
+          Value: true
+      Marker Scale: 0.8
+      Name: TF
+      Show Arrows: false
+      Show Axes: true
+      Show Names: true
+      Tree:
+        world:
+          virtual:
+            {}
+      Update Interval: 0
+      Value: true
+    - Class: Path Display
+      Color: 255; 255; 255
+      Enabled: true
+      History Length: 150
+      Name: Robot Path
+      Topic: /pose_stamped
+      Value: true
+    - Class: Path Display
+      Color: 170; 255; 255
+      Enabled: true
+      History Length: 150
+      Name: Reference Path
+      Topic: /reference_pose_stamped
+      Value: true
+    - Class: Path Display
+      Color: 204; 51; 204
+      Enabled: true
+      History Length: 150
+      Name: Virtual Path
+      Topic: /virtual_pose_stamped
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /obstacle_markers
+      Name: Obstacles
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: x
+      Class: rviz/LaserScan
+      Color: 255; 0; 0
+      Color Transformer: FlatColor
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 3.28477
+      Min Color: 0; 0; 0
+      Min Intensity: -1.93948
+      Name: LaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.01
+      Style: Points
+      Topic: /scan
+      Use Fixed Frame: true
+      Use rainbow: false
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: world
+    Frame Rate: 60
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+  Value: true
+  Views:
+    Current:
+      Angle: -1.57079
+      Class: rviz/TopDownOrtho
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.06
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Name: Current View
+      Near Clip Distance: 0.01
+      Scale: 218.24
+      Target Frame: world
+      Value: MTrackerView
+      X: 0
+      Y: 0
+    Saved: ~
+Window Geometry:
+  Automatic Controller:
+    collapsed: false
+  Controls Scaling:
+    collapsed: false
+  Data Recorder:
+    collapsed: false
+  Displays:
+    collapsed: false
+  Height: 1026
+  Hide Left Dock: false
+  Hide Right Dock: false
+  MTracker:
+    collapsed: false
+  Manual Controller:
+    collapsed: false
+  Obstacle Controller:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd00000003000000000000016a000003e4fc020000000bfb0000000800540069006d0065000000019d000000430000003b00fffffffb0000001200530065006c0065006300740069006f006e00000002a7000001210000006400fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007300000002ef000000d90000006400fffffffb0000001a0043006f006e00740072006f006c002000500061006e0065006c00000002c40000007f0000000000000000fb0000001600440065006200750067002000500061006e0065006c0000000333000000950000000000000000fb0000001a005300630061006c0069006e0067002000500061006e0065006c0000000254000000760000000000000000fb0000001a00440061007400610020005200650063006f00720064006500720100000000000000b10000003e00fffffffc000000b7000001890000010e0100001dfa000000000100000003fb00000022004d0061006e00750061006c00200043006f006e00740072006f006c006c006500720100000000ffffffff0000012400fffffffb00000028004100750074006f006d006100740069006300200043006f006e00740072006f006c006c006500720100000000ffffffff000000c000fffffffb00000026004f00620073007400610063006c006500200043006f006e00740072006f006c006c006500720100000000000001220000011c00fffffffb00000026005200650066006500720065006e00630065002000470065006e0065007200610074006f007201000002460000019e0000011b00fffffffb0000000800480065006c00700000000340000000a40000000000000000fb00000026005200650066006500720065006e00630065002000470065006e0065007200610074006f00720000000267000000760000011b00ffffff0000000100000140000003e4fc0200000005fb00000010004d0054007200610063006b0065007201000000000000005c0000003e00fffffffb0000001200530069006d0075006c00610074006f00720100000062000000bc0000008000fffffffb0000001e0053007400610074006500200045007300740069006d00610074006f007201000001240000005c0000003e00fffffffb000000200043006f006e00740072006f006c00730020005300630061006c0069006e006701000001860000008e0000005f00fffffffb000000100044006900730070006c006100790073010000021a000001ca000000dd00ffffff000000020000051500000094fc0100000001fb0000000a0056006900650077007302000000c700000027000001580000012200000399000003e400000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730000000000ffffffff0000000000000000
+  Reference Generator:
+    collapsed: false
+  Selection:
+    collapsed: false
+  Simulator:
+    collapsed: false
+  State Estimator:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1615
+  X: 65
+  Y: 24

@@ -1,0 +1,162 @@
+<!-- MTracker Launch File -->
+<launch>
+  <!-- ================ -->
+  <!-- Network Settings -->
+  <!-- ================ -->
+  <machine name="MTracker" user="mtracker" address="MTracker" env-loader="/home/mtracker/catkin_ws/src/mtracker/scripts/mtracker_env.sh" default="true"/>
+  <machine name="MTrackerUI" user="$(env USER)" address="MTrackerUI" env-loader="-d $(find mtracker)/scripts/mtracker_ui_env.sh"/>
+
+  <!-- ================= -->
+  <!-- Global parameters -->
+  <!-- ================= -->
+  <param name="loop_rate"             type="int"    value="100"/>
+  <param name="world_frame"           type="string" value="world"/>
+
+  <param name="controls_topic"        type="string" value="controls"/>
+  <param name="scaled_controls_topic" type="string" value="scaled_controls"/>
+
+  <param name="joy_topic"             type="string" value="joy"/>
+  <param name="keys_topic"            type="string" value="keys"/>
+
+  <!-- These are the best estimates of real pose and velocity -->
+  <param name="pose_topic"            type="string" value="pose"/>
+  <param name="velocity_topic"        type="string" value="velocity"/>
+  <!-- = -->
+
+  <param name="odom_pose_topic"       type="string" value="odom_pose"/>
+  <param name="odom_velocity_topic"   type="string" value="odom_velocity"/>
+
+  <param name="reference_pose_topic"      type="string" value="reference_pose"/>
+  <param name="reference_velocity_topic"  type="string" value="reference_velocity"/>
+
+  <param name="virtual_pose_topic"      type="string" value="virtual_pose"/>
+  <param name="virtual_velocity_topic"  type="string" value="virtual_velocity"/>
+
+  <param name="optitrack_pose_topic"    type="string" value="optitrack_pose"/>
+  <param name="obstacles_topic"         type="string" value="obstacles"/>
+
+  <!-- ============== -->
+  <!-- MTracker Nodes -->
+  <!-- ============== -->
+  <node name="mtracker" pkg="mtracker" type="mtracker" respawn="false" required="true" output="screen" machine="MTracker">
+    <!-- O -->
+  </node>
+
+  <node name="reference_generator" pkg="mtracker" type="reference_generator" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="child_frame" type="string" value="reference"/>
+    <param name="trajectory_type"   value="0"/>
+    <param name="trajectory_paused" value="false"/>
+  </node>
+
+  <node name="obstacle_controller" pkg="mtracker" type="obstacle_controller" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="world_radius" value="3.0"/>
+    <param name="kappa"        value="3.0"/>
+    <param name="epsilon"      value="0.0001"/>
+    <param name="k_w"          value="0.1"/>
+    <param name="b_"           value="2.5"/>
+    <param name="a"            value="0.5"/>
+  </node>
+
+  <node name="automatic_controller" pkg="mtracker" type="automatic_controller" respawn="false" required="true" output="screen" machine="MTracker">
+    <!-- = -->
+  </node>
+
+  <node name="manual_controller" pkg="mtracker" type="manual_controller" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="k_v" value="0.6"/>
+    <param name="k_w" value="1.5"/>
+    <param name="use_joy" type="bool" value="true"/>
+    <param name="use_keys" type="bool" value="true"/>
+  </node>
+
+  <node name="controls_scaling" pkg="mtracker" type="controls_scaling" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="max_wheel_rate" value="10.0"/>
+  </node>
+
+  <node name="state_estimator" pkg="mtracker" type="state_estimator" respawn="false" required="true" output="screen" machine="MTracker">
+    <param name="child_frame" type="string" value="robot"/>
+  </node>
+
+  <!-- ======== -->
+  <!-- PC Nodes -->
+  <!-- ======== -->
+  <node name="joy" pkg="joy" type="joy_node" respawn="false" required="true" output="screen" machine="MTrackerUI">
+    <param name="dev" type="string" value="/dev/input/js0"/>
+    <param name="deadzone" value="0.0"/>
+    <param name="autorepeat_rate" value="0"/>
+  </node>
+
+  <node name="simulator" pkg="mtracker" type="simulator" respawn="false" required="true" output="screen" machine="MTrackerUI">
+    <param name="child_frame" type="string" value="virtual"/>
+    <param name="time_constant" value="0.1"/>
+    <param name="time_delay"    value="0.0"/>
+    <param name="initial_x"     value="0.0"/>
+    <param name="initial_y"     value="0.0"/>
+    <param name="initial_theta" value="0.0"/>
+  </node>
+
+  <node name="mocap_node" pkg="mocap_optitrack" type="mocap_node" respawn="false" launch-prefix="" required="true" output="screen" machine="MTrackerUI">
+    <rosparam file="$(find mocap_optitrack)/config/mocap.yaml" command="load"/>
+  </node>
+
+  <node name="data_recorder" pkg="mtracker" type="data_recorder" respawn="false" required="true" output="screen" machine="MTrackerUI">
+    <param name="use_yaml"               type="bool" value="false"/>
+    <param name="use_txt"                type="bool" value="true"/>
+    <param name="record_pose"            type="bool" value="true"/>
+    <param name="record_reference_pose"  type="bool" value="false"/>
+    <param name="record_controls"        type="bool" value="true"/>
+    <param name="record_scaled_controls" type="bool" value="true"/>
+    <param name="record_obstacles"       type="bool" value="true"/>
+    <param name="record_potential"       type="bool" value="true"/>
+  </node>
+
+  <!-- ================================== -->
+  <!-- Laser Scaner and Obstacle Detector -->
+  <!-- ================================== -->
+  <node name="hokuyo" pkg="hokuyo_node" type="hokuyo_node" respawn="false" required="false" output="screen" machine="MTracker">
+    <param name="port" type="string" value="/dev/ttyACM0"/>
+    <param name="frame_id" type="string" value="robot"/>
+
+    <param name="intensity" type="bool" value="false"/>
+    <param name="calibrate_time" type="bool" value="true"/>
+
+    <param name="min_ang" value="-2.0862"/>
+    <param name="max_ang" value="2.0923"/>
+    <param name="skip" value="0"/>
+    <param name="time_offset" value="0.0"/>
+    <param name="cluster" value="1"/>
+  </node>
+
+  <!--<node name="robot_to_scanner" pkg="tf" type="static_transform_publisher" respawn="false" required="false" output="screen" machine="MTracker" args="0 0 0 0 0 0 robot scanner 100"/>-->
+ 
+  <node name="obstacle_detector" pkg="obstacle_detector" type="obstacle_detector" respawn="false" required="false" output="screen" machine="MTracker">
+    <param name="world_frame"    type="string" value="world"/>
+    <param name="scanner_frame"  type="string" value="robot"/>
+    <param name="scan_topic"     type="string" value="scan"/>
+    <param name="pcl_topic"      type="string" value="pcl"/>
+    <param name="obstacle_topic" type="string" value="obstacles"/>
+    <param name="marker_topic"   type="string" value="obstacle_markers"/>
+
+    <param name="use_scan"            type="bool" value="true"/>
+    <param name="use_pcl"             type="bool" value="false"/>
+    <param name="publish_markers"     type="bool" value="true"/>
+    <param name="save_snapshot"       type="bool" value="false"/>
+    <param name="use_split_and_merge" type="bool" value="false"/>
+    <param name="transform_to_world"  type="bool" value="true"/>
+
+    <param name="min_group_points"    value="3"/>
+    <param name="max_group_distance"  value="0.100"/>
+    <param name="distance_proportion" value="0.006136"/>
+    <param name="max_split_distance"  value="0.100"/>
+
+    <param name="max_merge_separation" value="0.200"/>
+    <param name="max_merge_spread"     value="0.070"/>
+    <param name="max_circle_radius"    value="0.300"/>
+    <param name="radius_enlargement"   value="0.050"/>
+  </node>
+
+  <!-- ============= -->
+  <!-- Visualization -->
+  <!-- ============= -->  
+  <node name="rviz" pkg="rviz" type="rviz" respawn="false" required="true" output="screen" machine="MTrackerUI" args="-d $(find mtracker)/resources/mtracker.rviz"/>
+</launch>
+

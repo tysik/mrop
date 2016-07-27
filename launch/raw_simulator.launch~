@@ -1,0 +1,18 @@
+<!--  -->
+<launch>
+  <node pkg="mrop" type="simulator" name="simulator" output="screen">
+    <param name="parent_frame"       value="world"/>
+    <param name="child_frame"        value="virtual"/>
+    
+    <param name="simulator_active"   value="true"/>
+
+    <param name="loop_rate"          value="100.0"/>    
+    <param name="time_constant"      value="0.0"/>
+    <param name="time_delay"         value="0.0"/>
+
+    <param name="initial_x"     value="0.0"/>
+    <param name="initial_y"     value="0.0"/>
+    <param name="initial_theta" value="0.0"/>
+  </node>
+</launch>
+

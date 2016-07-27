@@ -1,0 +1,45 @@
+Czego nie rozumiem w ramce robota:
+- Dlaczego prędkości kół nie są przesyłane jako float, skoro x, y i theta dla odometrii są?
+- Dlaczego prędkości kół (int16) są wg dokumentacji wysyłane jako little endian a crc (uint16) jako big endian?
+- Dlaczego stosujemy 2 bajtowy kod statusu (w ramce danych), a nie wykorzystujemy bajtu rozkazu? Po co w ogóle jest w takim razie ten kod rozkazu?
+- Dlaczego drugi bajt przesyłanej ramki zawiera liczbę bajtów nie uwzględniając samego siebie skoro jest on uwzględniany podczas liczenia crc (później skutkuje to tym, że do liczenia crc trzeba podawać w argumencie len + 1)?
+
+Propozycje:
+- (Już zrobione) Niech ramka zwrotna będzie miała identyczną formę jak ramka przesyłana. Znacznie uprości to kod.
+- Niech wszystkie ramki wysyłane mają taką samą strukturę i długość. Przesłanie kilku zer nie zaszkodzi, a ZNACZĄCO uprości kod.
+- Niech crc ma zwykły endian - jak wszystko inne. To też uprości kod.
+- Koła kręcą się w dwóch kierunkach przy takich samym prędkościach. To powinno być załatwiane na low-level controller.
+
+Propozycja ramki:
+Taka sama ramka jest wysyłana DO robota i Z robota. W nawiasach klamrowych przedstawiono propozycję typu zmiennych. Odradza sie korzystanie z zmiennych typu unsigned. W nawiasach okrągłych została podana liczba bajtów przeznaczonych na daną pozycję.
+
+F = 
+  Header       {int8_t}  (1) 
+  Robot number {int8_t}  (1) 
+  Mode         {int8_t}  (1) 
+  Omega_l      {float}   (4) 
+  Omega_r      {float}   (4) 
+  X            {float}   (4) 
+  Y            {float}   (4) 
+  Theta        {float}   (4) 
+  Diodes       {int8_t}  (1) 
+  CRC          {int16_t} (2)
+
+W przypadku ramki wysyłanej z komputera do sterownika niskiego poziomu, pozycje należy rozumieć następująco:
+* Header - nagłówek, standardowo 0xAA.
+* Robot number - numer robota, standardowo 0x01.
+* Mode - bajt, który zawiera informacje logiczne. Mode = [ # # # # # O D M ], gdzie: 
+  - O - ustaw lokację podawaną przez odometrię na X Y Theta (gdy 1) lub ignoruj X Y Theta (gdy 0),
+  - D - załącz (1) / wyłącz (0) diody,
+  - M - załącz (1) / wyłącz (0) silniki - gdy (1), regulatory przyjmują wartości Omega_l oraz Omega_r, gdy (0) - wartości te są ignorowane,
+  - # - bit ignorowany.
+* Omega_l, Omega_r - prędkości kątowe kół lewego i prawego podawane w rad/s, przy czym podanie takich samych wartości skutkuje jazdą na wprost.
+* X, Y, Theta - lokacja robota podawana w m i rad.
+* Diodes - bajt zawierający informacje logiczne dotyczące zapalania diod: [ # # D32 D31 D22 D21 D12 D11 ] - dla każdej diody mamy 2 bity, aby umożliwić uruchomienie predefiniowanych trybów świecenia (wyłącz (00), miganie wolne (01), miganie szybkie (10), ciągłe świecenie (11)).
+* CRC - 2 bajtowa suma kontrolna liczona z wszystkich bajtów oprócz Header'a oraz samego CRC oczywiście. Byle tylko była zapisana z takim samym endiannesem.
+
+W przypadku ramki wysyłanej ze sterownika niskiego poziomu do komputera, występują pewne zmiany w interpretacji pozycji:
+* Mode - aktualnie ustawiony tryb (bit O nie ma wówczas znaczenia).
+* Omega_l, Omega_r - aktualne prędkości obrotowe kół.
+* X, Y, Theta - aktualne wartości lokacji zwracane przez odometrię.
+
