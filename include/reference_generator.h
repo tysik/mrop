@@ -41,6 +41,7 @@
 #include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
 #include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 
 #include "../include/trajectories.h"
 
@@ -54,7 +55,7 @@ public:
   ~ReferenceGenerator();
 
 private:   
-  bool trigger(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   bool updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
   void start();

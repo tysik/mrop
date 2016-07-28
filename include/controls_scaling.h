@@ -37,10 +37,10 @@
 
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
-#include <mtracker/Trigger.h>
-#include <mtracker/Params.h>
+#include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 
-namespace mtracker
+namespace mrop
 {
 
 class ControlsScaling
@@ -55,8 +55,8 @@ private:
   void initialize();
 
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
-  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
+  bool trigger(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+  bool updateParams(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -73,4 +73,4 @@ private:
   bool controls_scaling_active_;
 };
 
-} // namespace mtracker
+} // namespace mrop

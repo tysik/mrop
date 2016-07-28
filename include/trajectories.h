@@ -220,4 +220,4 @@ protected:
   double b_;      // Distance (product) [m]
 };
 
-} // namespace mtracker
+} // namespace mrop

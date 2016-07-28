@@ -39,6 +39,7 @@
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
 #include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 
 namespace mrop
 {
@@ -51,7 +52,7 @@ public:
 private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg);
   void keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg);
-  bool trigger(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+  bool trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   bool updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
   ros::NodeHandle nh_;

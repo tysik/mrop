@@ -40,10 +40,10 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
-#include <mtracker/Trigger.h>
-#include <mtracker/Params.h>
+#include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 
-namespace mtracker
+namespace mrop
 {
 
 class StateEstimator
@@ -59,8 +59,8 @@ private:
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg);
   void odomPoseCallback(const geometry_msgs::Pose2D::ConstPtr& odom_pose_msg);
   void optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr& opti_pose_msg);
-  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
+  bool trigger(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
+  bool updateParams(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -68,23 +68,16 @@ private:
   ros::Subscriber scaled_controls_sub_;
   ros::Subscriber odom_pose_sub_;
   ros::Subscriber optitrack_pose_sub_;
+
   ros::Publisher pose_pub_;
   ros::Publisher pose_stamped_pub_;
   ros::Publisher velocity_pub_;
+
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
-  std::string scaled_controls_topic_;
-  std::string odom_pose_topic_;
-  std::string optitrack_pose_topic_;
-  std::string velocity_topic_;
-  std::string pose_topic_;
-
   tf::TransformBroadcaster pose_bc_;
   tf::Transform pose_tf_;
-
-  std::string world_frame_;
-  std::string child_frame_;
 
   geometry_msgs::Twist scaled_controls_;
   geometry_msgs::Pose2D odom_pose_;
@@ -92,8 +85,13 @@ private:
   geometry_msgs::Pose2D pose_;
   geometry_msgs::Twist velocity_;
 
-  int loop_rate_;
-  bool state_estimator_active_;
+  // Parameters
+  std::string p_parent_frame_;
+  std::string p_child_frame_;
+
+  bool p_state_estimator_active_;
+
+  double p_loop_rate_;
 };
 
-} // namespace mtracker
+} // namespace mrop

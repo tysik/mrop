@@ -40,12 +40,12 @@ using namespace std;
 
 ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~") {
   {
-    std_srvs::Empty::Request req;
-    std_srvs::Empty::Response res;
+    std_srvs::Empty empt;
+    std_srvs::Trigger trig;
 
-    updateParams(req, res);
+    updateParams(empt.request, empt.response);
     p_reference_generator_active_ = !p_reference_generator_active_;
-    trigger(req, res);
+    trigger(trig.request, trig.response);
   }
 
   trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
@@ -76,7 +76,7 @@ ReferenceGenerator::~ReferenceGenerator() {
   delete trajectory_;
 }
 
-bool ReferenceGenerator::trigger(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+bool ReferenceGenerator::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
   p_reference_generator_active_ = !p_reference_generator_active_;
 
   if (p_reference_generator_active_) {
@@ -96,16 +96,18 @@ bool ReferenceGenerator::trigger(std_srvs::Empty::Request& req, std_srvs::Empty:
     pose_stamped_pub_.shutdown();
   }
 
+  res.success = p_reference_generator_active_;
+
   return true;
 }
 
 bool ReferenceGenerator::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+  nh_local_.param<string>("parent_frame", p_parent_frame_, "world");
+  nh_local_.param<string>("child_frame", p_child_frame_, "reference");
+
   nh_local_.param<bool>("reference_generator_active", p_reference_generator_active_, true);
   nh_local_.param<bool>("trajectory_paused", p_paused_, false);
   nh_local_.param<bool>("trajectory_stopped", p_stopped_, false);
-
-  nh_local_.param<string>("parent_frame", p_parent_frame_, "world");
-  nh_local_.param<string>("child_frame", p_child_frame_, "reference");
 
   nh_local_.param<double>("loop_rate", p_loop_rate_, 100.0);
   nh_local_.param<int>("trajectory_type", p_trajectory_type_, 0);

@@ -39,12 +39,12 @@ using namespace mrop;
 
 ManualController::ManualController() : nh_(""), nh_local_("~") {
   {
-    std_srvs::Empty::Request req;
-    std_srvs::Empty::Response res;
+    std_srvs::Empty empt;
+    std_srvs::Trigger trig;
 
-    updateParams(req, res);
+    updateParams(empt.request, empt.response);
     p_manual_controller_active_ = !p_manual_controller_active_;
-    trigger(req, res);
+    trigger(trig.request, trig.response);
   }
 
   trigger_srv_ = nh_.advertiseService("manual_controller_trigger_srv", &ManualController::trigger, this);
@@ -72,7 +72,7 @@ void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_m
   }
 }
 
-bool ManualController::trigger(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+bool ManualController::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
   p_manual_controller_active_ = !p_manual_controller_active_;
 
   if (p_manual_controller_active_) {
@@ -89,6 +89,8 @@ bool ManualController::trigger(std_srvs::Empty::Request& req, std_srvs::Empty::R
     joy_sub_.shutdown();
     keys_sub_.shutdown();
   }
+
+  res.success = p_manual_controller_active_;
 
   return true;
 }

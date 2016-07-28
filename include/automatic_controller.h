@@ -38,10 +38,10 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Twist.h>
-#include <mtracker/Trigger.h>
-#include <mtracker/Params.h>
+#include <std_srvs/Empty.h>
+#include <std_srvs/Trigger.h>
 
-namespace mtracker
+namespace mrop
 {
 
 class AutomaticController
@@ -50,16 +50,16 @@ public:
   AutomaticController();
 
 private:
-  void initialize();
-  void computeControls();
-  void publishAll();
-
   void poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg);
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& velocity_msg);
   void refPoseCallback(const geometry_msgs::Pose2D::ConstPtr& ref_pose_msg);
   void refVelocityCallback(const geometry_msgs::Twist::ConstPtr& ref_velocity_msg);
-  bool trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res);
-  bool updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res);
+
+  bool trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
+  bool updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
+
+  void computeControls();
+  void publishAll();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_local_;
@@ -69,14 +69,9 @@ private:
   ros::Subscriber ref_pose_sub_;
   ros::Subscriber ref_velocity_sub_;
   ros::Publisher controls_pub_;
+
   ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
-
-  std::string controls_topic_;
-  std::string pose_topic_;
-  std::string velocity_topic_;
-  std::string reference_pose_topic_;
-  std::string reference_velocity_topic_;
 
   geometry_msgs::Twist controls_;
   geometry_msgs::Pose2D pose_;
@@ -84,8 +79,10 @@ private:
   geometry_msgs::Pose2D ref_pose_;
   geometry_msgs::Twist ref_velocity_;
 
-  int loop_rate_;
-  bool automatic_controller_active_;
+  // Parameters
+  bool p_automatic_controller_active_;
+
+  double p_loop_rate_;
 };
 
-} // namespace mtracker
+} // namespace mrop

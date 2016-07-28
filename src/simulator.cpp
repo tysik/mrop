@@ -40,12 +40,12 @@ using namespace std;
 
 Simulator::Simulator() : nh_(""), nh_local_("~") {
   {
-    std_srvs::Empty::Request req;
-    std_srvs::Empty::Response res;
+    std_srvs::Empty empt;
+    std_srvs::Trigger trig;
 
-    updateParams(req, res);
+    updateParams(empt.request, empt.response);
     p_simulator_active_ = !p_simulator_active_;
-    trigger(req, res);
+    trigger(trig.request, trig.response);
   }
 
   trigger_srv_ = nh_.advertiseService("simulator_trigger_srv", &Simulator::trigger, this);
@@ -71,7 +71,7 @@ void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_
   controls_ = *controls_msg;
 }
 
-bool Simulator::trigger(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+bool Simulator::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
   p_simulator_active_ = !p_simulator_active_;
 
   if (p_simulator_active_) {
@@ -90,14 +90,16 @@ bool Simulator::trigger(std_srvs::Empty::Request& req, std_srvs::Empty::Response
     pose_stamped_pub_.shutdown();
   }
 
+  res.success = p_simulator_active_;
+
   return true;
 }
 
 bool Simulator::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
-  nh_local_.param<bool>("simulator_active", p_simulator_active_, true);
-
   nh_local_.param<string>("parent_frame", p_parent_frame_, "world");
-  nh_local_.param<string>("child_frame", p_child_frame_, "virtual");
+  nh_local_.param<string>("child_frame", p_child_frame_, "simulator");
+
+  nh_local_.param<bool>("simulator_active", p_simulator_active_, true);
 
   nh_local_.param<double>("loop_rate", p_loop_rate_, 100.0);
   nh_local_.param<double>("time_constant", p_time_constant_, 0.0);

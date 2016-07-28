@@ -35,7 +35,7 @@
 
 #include "../include/controls_scaling.h"
 
-using namespace mtracker;
+using namespace mrop;
 
 ControlsScaling::ControlsScaling() : nh_(""), nh_local_("~"), ROBOT_BASE(0.145), WHEEL_RADIUS(0.025), controls_scaling_active_(false) {
   initialize();
@@ -87,12 +87,12 @@ void ControlsScaling::controlsCallback(const geometry_msgs::Twist::ConstPtr& con
   controls_pub_.publish(scaled_controls);
 }
 
-bool ControlsScaling::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
+bool ControlsScaling::trigger(mrop::Trigger::Request &req, mrop::Trigger::Response &res) {
   controls_scaling_active_ = req.activate;
   return true;
 }
 
-bool ControlsScaling::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+bool ControlsScaling::updateParams(mrop::Params::Request &req, mrop::Params::Response &res) {
   if (req.params.size() >= 1) {
     max_wheel_rate_ = req.params[0];
     return true;

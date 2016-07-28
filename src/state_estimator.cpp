@@ -35,78 +35,35 @@
 
 #include "../include/state_estimator.h"
 
-using namespace mtracker;
+using namespace mrop;
+using namespace std;
 
-StateEstimator::StateEstimator() : nh_(""), nh_local_("~"), state_estimator_active_(false) {
-  initialize();
+StateEstimator::StateEstimator() : nh_(""), nh_local_("~") {
+  {
+    std_srvs::Empty empt;
+    std_srvs::Trigger trig;
+
+    updateParams(empt.request, empt.response);
+    p_state_estimator_active_ = !p_state_estimator_active_;
+    trigger(trig.request, trig.response);
+  }
+
+  trigger_srv_ = nh_.advertiseService("state_estimator_trigger_srv", &StateEstimator::trigger, this);
+  params_srv_ = nh_.advertiseService("state_estimator_params_srv", &StateEstimator::updateParams, this);
 
   ROS_INFO("State estimator [OK]");
-
-  ros::Rate rate(loop_rate_);
+  ros::Rate rate(p_loop_rate_);
 
   while (nh_.ok()) {
     ros::spinOnce();
 
-    if (state_estimator_active_) {
+    if (p_state_estimator_active_) {
       estimateState();
       publishAll();
     }
 
     rate.sleep();
   }
-}
-
-void StateEstimator::initialize() {
-  if (!nh_.getParam("loop_rate", loop_rate_))
-    loop_rate_ = 100;
-
-  if (!nh_.getParam("scaled_controls_topic", scaled_controls_topic_))
-    scaled_controls_topic_ = "scaled_controls";
-
-  if (!nh_.getParam("odom_pose_topic", odom_pose_topic_))
-    odom_pose_topic_ = "odom_pose";
-
-  if (!nh_.getParam("optitrack_pose_topic", optitrack_pose_topic_))
-    optitrack_pose_topic_ = "optitrack_pose";
-
-  if (!nh_.getParam("velocity_topic", velocity_topic_))
-    velocity_topic_ = "velocity";
-
-  if (!nh_.getParam("pose_topic", pose_topic_))
-    pose_topic_ = "pose";
-
-  if (!nh_.getParam("world_frame", world_frame_))
-    world_frame_ = "world";
-
-  if (!nh_local_.getParam("child_frame", child_frame_))
-    child_frame_ = "robot";
-
-  trigger_srv_ = nh_.advertiseService("state_estimator_trigger_srv", &StateEstimator::trigger, this);
-  params_srv_ = nh_.advertiseService("state_estimator_params_srv", &StateEstimator::updateParams, this);
-}
-
-void StateEstimator::estimateState() {
-  pose_ = opti_pose_;
-  velocity_ = scaled_controls_;
-}
-
-void StateEstimator::publishAll() {
-  pose_pub_.publish(pose_);
-  velocity_pub_.publish(velocity_);
-
-  geometry_msgs::PoseStamped pose_s;
-
-  pose_s.header.stamp = ros::Time::now();
-  pose_s.header.frame_id = child_frame_;
-  pose_s.pose.position.x = pose_.x;
-  pose_s.pose.position.y = pose_.y;
-  pose_s.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
-
-  pose_stamped_pub_.publish(pose_s);
-
-  pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
-  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
-  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), world_frame_, child_frame_));
 }
 
 void StateEstimator::controlsCallback(const geometry_msgs::Twist::ConstPtr& scaled_controls_msg) {
@@ -136,18 +93,17 @@ void StateEstimator::optitrackPoseCallback(const geometry_msgs::Pose2D::ConstPtr
     opti_pose_.theta = prev_theta + theta_diff;
 }
 
-bool StateEstimator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
-  state_estimator_active_ = req.activate;
+bool StateEstimator::trigger(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res) {
+  p_state_estimator_active_ = !p_state_estimator_active_;
 
-  if (req.activate) {
-    scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>(scaled_controls_topic_, 10, &StateEstimator::controlsCallback, this);
-    odom_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(odom_pose_topic_, 10, &StateEstimator::odomPoseCallback, this);
-    optitrack_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(optitrack_pose_topic_, 10, &StateEstimator::optitrackPoseCallback, this);
-    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>(pose_topic_, 10);
-    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(pose_topic_ + "_stamped", 10);
-    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>(velocity_topic_, 10);
+  if (p_state_estimator_active_) {
+    scaled_controls_sub_ = nh_.subscribe<geometry_msgs::Twist>("scaled_controls", 10, &StateEstimator::controlsCallback, this);
+    odom_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>("odom_pose", 10, &StateEstimator::odomPoseCallback, this);
+    optitrack_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>("optitrack_pose", 10, &StateEstimator::optitrackPoseCallback, this);
 
-    return true;
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>("pose", 10);
+    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("pose_stamped", 10);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>("velocity", 10);
   }
   else {
     scaled_controls_sub_.shutdown();
@@ -157,10 +113,45 @@ bool StateEstimator::trigger(mtracker::Trigger::Request &req, mtracker::Trigger:
     pose_stamped_pub_.shutdown();
     velocity_pub_.shutdown();
   }
+
+  res.success = p_state_estimator_active_;
+
+  return true;
 }
 
-bool StateEstimator::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+bool StateEstimator::updateParams(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
+  nh_local_.param<string>("parent_frame", p_parent_frame_, "world");
+  nh_local_.param<string>("child_frame_", p_child_frame_, "robot");
+
+  nh_local_.param<bool>("state_estimator_active", p_state_estimator_active_, true);
+
+  nh_local_.param<double>("loop_rate", p_loop_rate_, 100.0);
+
   return true;
+}
+
+void StateEstimator::estimateState() {
+  pose_ = opti_pose_;
+  velocity_ = scaled_controls_;
+}
+
+void StateEstimator::publishAll() {
+  pose_pub_.publish(pose_);
+  velocity_pub_.publish(velocity_);
+
+  geometry_msgs::PoseStamped pose_s;
+
+  pose_s.header.stamp = ros::Time::now();
+  pose_s.header.frame_id = p_child_frame_;
+  pose_s.pose.position.x = pose_.x;
+  pose_s.pose.position.y = pose_.y;
+  pose_s.pose.orientation = tf::createQuaternionMsgFromYaw(pose_.theta);
+
+  pose_stamped_pub_.publish(pose_s);
+
+  pose_tf_.setOrigin(tf::Vector3(pose_.x, pose_.y, 0.0));
+  pose_tf_.setRotation(tf::createQuaternionFromYaw(pose_.theta));
+  pose_bc_.sendTransform(tf::StampedTransform(pose_tf_, ros::Time::now(), p_parent_frame_, p_child_frame_));
 }
 
 int main(int argc, char** argv) {

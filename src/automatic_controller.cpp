@@ -35,72 +35,34 @@
 
 #include "../include/automatic_controller.h"
 
-using namespace mtracker;
+using namespace mrop;
 
-AutomaticController::AutomaticController() : nh_(""), nh_local_("~"), automatic_controller_active_(false) {
-  initialize();
+AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
+  {
+    std_srvs::Empty empt;
+    std_srvs::Trigger trig;
+
+    updateParams(empt.request, empt.response);
+    p_automatic_controller_active_ = !p_automatic_controller_active_;
+    trigger(trig.request, trig.response);
+  }
+
+  trigger_srv_ = nh_.advertiseService("automatic_controller_trigger_srv", &AutomaticController::trigger, this);
+  params_srv_ = nh_.advertiseService("automatic_controller_params_srv", &AutomaticController::updateParams, this);
 
   ROS_INFO("Automatic controller [OK]");
-
-  ros::Rate rate(loop_rate_);
+  ros::Rate rate(p_loop_rate_);
 
   while (nh_.ok()) {
     ros::spinOnce();
 
-    if (automatic_controller_active_) {
+    if (p_automatic_controller_active_) {
       computeControls();
       publishAll();
     }
 
     rate.sleep();
   }
-}
-
-void AutomaticController::initialize() {
-  if (!nh_.getParam("loop_rate", loop_rate_))
-    loop_rate_ = 100;
-
-  if (!nh_.getParam("pose_topic", pose_topic_))
-    pose_topic_ = "pose";
-
-  if (!nh_.getParam("velocity_topic", velocity_topic_))
-    velocity_topic_ = "velocity";
-
-  if (!nh_.getParam("reference_pose_topic", reference_pose_topic_))
-    reference_pose_topic_ = "reference_pose";
-
-  if (!nh_.getParam("reference_velocity_topic", reference_velocity_topic_))
-    reference_velocity_topic_ = "reference_velocity";
-
-  if (!nh_.getParam("controls_topic", controls_topic_))
-    controls_topic_ = "controls";
-
-  trigger_srv_ = nh_.advertiseService("automatic_controller_trigger_srv", &AutomaticController::trigger, this);
-  params_srv_ = nh_.advertiseService("automatic_controller_params_srv", &AutomaticController::updateParams, this);
-}
-
-void AutomaticController::computeControls() {
-  double x = pose_.x;
-  double y = pose_.y;
-  double theta = pose_.theta;
-
-  double x_d = ref_pose_.x;
-  double y_d = ref_pose_.y;
-  double theta_d = ref_pose_.theta;
-
-  double v = 0.0; // Linear velocity
-  double w = 0.0; // Angular velocity
-
-  /*
-   * HERE PUT THE CODE
-   */
-
-  controls_.linear.x = v;
-  controls_.angular.z = w;
-}
-
-void AutomaticController::publishAll() {
-  controls_pub_.publish(controls_);
 }
 
 void AutomaticController::poseCallback(const geometry_msgs::Pose2D::ConstPtr& pose_msg) {
@@ -119,18 +81,19 @@ void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstP
   ref_velocity_ = *ref_velocity_msg;
 }
 
-bool AutomaticController::trigger(mtracker::Trigger::Request &req, mtracker::Trigger::Response &res) {
-  automatic_controller_active_ = req.activate;
+bool AutomaticController::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
+  p_automatic_controller_active_ = !p_automatic_controller_active_;
 
-  if (req.activate) {
-    pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(pose_topic_, 5, &AutomaticController::poseCallback, this);
-    velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(velocity_topic_, 5, &AutomaticController::velocityCallback, this);
-    ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>(reference_pose_topic_, 5, &AutomaticController::refPoseCallback, this);
-    ref_velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>(reference_velocity_topic_, 5, &AutomaticController::refVelocityCallback, this);
-    controls_pub_ = nh_.advertise<geometry_msgs::Twist>(controls_topic_, 5);
+  if (p_automatic_controller_active_) {
+    pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>("pose", 5, &AutomaticController::poseCallback, this);
+    velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>("velocity", 5, &AutomaticController::velocityCallback, this);
+    ref_pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>("reference_pose", 5, &AutomaticController::refPoseCallback, this);
+    ref_velocity_sub_ = nh_.subscribe<geometry_msgs::Twist>("reference_velocity", 5, &AutomaticController::refVelocityCallback, this);
+    controls_pub_ = nh_.advertise<geometry_msgs::Twist>("controls", 5);
   }
   else {
     controls_.linear.x = 0.0;
+    controls_.linear.y = 0.0;
     controls_.angular.z = 0.0;
     controls_pub_.publish(controls_);
 
@@ -141,11 +104,56 @@ bool AutomaticController::trigger(mtracker::Trigger::Request &req, mtracker::Tri
     controls_pub_.shutdown();
   }
 
+  res.success = p_automatic_controller_active_;
+
   return true;
 }
 
-bool AutomaticController::updateParams(mtracker::Params::Request &req, mtracker::Params::Response &res) {
+bool AutomaticController::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+  nh_local_.param<bool>("automatic_controller_active", p_automatic_controller_active_, true);
+  nh_local_.param<double>("loop_rate", p_loop_rate_, 100.0);
+
   return true;
+}
+
+void AutomaticController::computeControls() {
+  /*
+   * The following variables are described in the world coordinate system
+   */
+  double x = pose_.x;
+  double y = pose_.y;
+  double theta = pose_.theta;
+
+  double v_x = velocity_.linear.x;
+  double v_y = velocity_.linear.y;
+  double w_z = velocity_.angular.z;
+
+  double x_d = ref_pose_.x;
+  double y_d = ref_pose_.y;
+  double theta_d = ref_pose_.theta;
+
+  double v_x_d = ref_velocity_.linear.x;
+  double v_y_d = ref_velocity_.linear.y;
+  double w_z_d = ref_velocity_.angular.z;
+
+  /*
+   * The control signals must be described in the base coordinate system
+   */
+  double u = 0.0; // Forward linear velocity
+  double v = 0.0; // Sideways linear velocity
+  double w = 0.0; // Angular velocity
+
+  /*
+   * HERE PUT THE CONTROLLER CODE
+   */
+
+  controls_.linear.x = u;
+  controls_.linear.y = v;
+  controls_.angular.z = w;
+}
+
+void AutomaticController::publishAll() {
+  controls_pub_.publish(controls_);
 }
 
 int main(int argc, char** argv) {
