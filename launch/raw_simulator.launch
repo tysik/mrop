@@ -4,7 +4,7 @@
     <param name="parent_frame"       value="world"/>
     <param name="child_frame"        value="virtual"/>
     
-    <param name="simulator_active"   value="true"/>
+    <param name="active"             value="true"/>
 
     <param name="loop_rate"          value="100.0"/>    
     <param name="time_constant"      value="0.0"/>

@@ -39,17 +39,10 @@ using namespace mrop;
 using namespace std;
 
 Simulator::Simulator() : nh_(""), nh_local_("~") {
-  {
-    std_srvs::Empty empt;
-    std_srvs::Trigger trig;
+  std_srvs::Empty empty;
+  updateParams(empty.request, empty.response);
 
-    updateParams(empt.request, empt.response);
-    p_simulator_active_ = !p_simulator_active_;
-    trigger(trig.request, trig.response);
-  }
-
-  trigger_srv_ = nh_.advertiseService("simulator_trigger_srv", &Simulator::trigger, this);
-  params_srv_ = nh_.advertiseService("simulator_params_srv", &Simulator::updateParams, this);
+  params_srv_ = nh_local_.advertiseService("params", &Simulator::updateParams, this);
 
   ROS_INFO("Simulator [OK]");
   ros::Rate rate(p_loop_rate_);
@@ -57,7 +50,7 @@ Simulator::Simulator() : nh_(""), nh_local_("~") {
   while (nh_.ok()) {
     ros::spinOnce();
 
-    if (p_simulator_active_) {
+    if (p_active_) {
       computeVelocity();
       computePose();
       publishAll();
@@ -71,35 +64,11 @@ void Simulator::controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_
   controls_ = *controls_msg;
 }
 
-bool Simulator::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
-  p_simulator_active_ = !p_simulator_active_;
-
-  if (p_simulator_active_) {
-    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>("scaled_controls", 5, &Simulator::controlsCallback, this);
-    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>("virtual_pose", 5);
-    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>("virtual_velocity", 5);
-    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("virtual_pose_stamped", 5);
-  }
-  else {
-    lagged_pose_.assign(lagged_pose_.size(), pose_);
-    lagged_velocity_.assign(lagged_velocity_.size(), velocity_);
-
-    controls_sub_.shutdown();
-    pose_pub_.shutdown();
-    velocity_pub_.shutdown();
-    pose_stamped_pub_.shutdown();
-  }
-
-  res.success = p_simulator_active_;
-
-  return true;
-}
-
 bool Simulator::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
   nh_local_.param<string>("parent_frame", p_parent_frame_, "world");
   nh_local_.param<string>("child_frame", p_child_frame_, "simulator");
 
-  nh_local_.param<bool>("simulator_active", p_simulator_active_, true);
+  nh_local_.param<bool>("active", p_active_, true);
 
   nh_local_.param<double>("loop_rate", p_loop_rate_, 100.0);
   nh_local_.param<double>("time_constant", p_time_constant_, 0.0);
@@ -119,6 +88,22 @@ bool Simulator::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Res
   nh_local_.param<double>("initial_x", pose_.x, 0.0);
   nh_local_.param<double>("initial_y", pose_.y, 0.0);
   nh_local_.param<double>("initial_theta", pose_.theta, 0.0);
+
+  if (p_active_) {
+    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>("scaled_controls", 5, &Simulator::controlsCallback, this);
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>("virtual_pose", 5);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>("virtual_velocity", 5);
+    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("virtual_pose_stamped", 5);
+  }
+  else {
+    lagged_pose_.assign(lagged_pose_.size(), pose_);
+    lagged_velocity_.assign(lagged_velocity_.size(), velocity_);
+
+    controls_sub_.shutdown();
+    pose_pub_.shutdown();
+    velocity_pub_.shutdown();
+    pose_stamped_pub_.shutdown();
+  }
 
   return true;
 }

@@ -16,8 +16,8 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})# ${obstacle_detector_INCLUDE_DIRS})
 
-#add_executable(simulator src/simulator.cpp include/simulator.h)
-#target_link_libraries(simulator ${catkin_LIBRARIES})
+add_executable(simulator src/simulator.cpp include/simulator.h)
+target_link_libraries(simulator ${catkin_LIBRARIES})
 
 #add_executable(reference_generator src/reference_generator.cpp include/reference_generator.h include/trajectories.h)
 #target_link_libraries(reference_generator ${catkin_LIBRARIES})

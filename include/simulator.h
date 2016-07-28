@@ -43,7 +43,6 @@
 #include <geometry_msgs/Twist.h>
 #include <tf/transform_broadcaster.h>
 #include <std_srvs/Empty.h>
-#include <std_srvs/Trigger.h>
 
 namespace mrop
 {
@@ -55,7 +54,6 @@ public:
 
 private:
   void controlsCallback(const geometry_msgs::Twist::ConstPtr& controls_msg);
-  bool trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   bool updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
   void computeVelocity();
@@ -71,7 +69,6 @@ private:
   ros::Publisher velocity_pub_;
   ros::Publisher pose_stamped_pub_;
 
-  ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
   tf::TransformBroadcaster tf_bc_;
@@ -88,7 +85,7 @@ private:
   std::string p_parent_frame_;
   std::string p_child_frame_;
 
-  bool p_simulator_active_;
+  bool p_active_;
 
   double p_loop_rate_;
   double p_sampling_time_;
