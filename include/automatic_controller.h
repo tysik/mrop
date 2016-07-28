@@ -83,6 +83,8 @@ private:
   bool p_automatic_controller_active_;
 
   double p_loop_rate_;
+
+  double p_k_p_;
 };
 
 } // namespace mrop

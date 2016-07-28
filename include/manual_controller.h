@@ -39,7 +39,6 @@
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/Twist.h>
 #include <std_srvs/Empty.h>
-#include <std_srvs/Trigger.h>
 
 namespace mrop
 {
@@ -52,7 +51,6 @@ public:
 private:
   void joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg);
   void keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg);
-  bool trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   bool updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 
   ros::NodeHandle nh_;
@@ -60,21 +58,18 @@ private:
 
   ros::Subscriber joy_sub_;
   ros::Subscriber keys_sub_;
-
   ros::Publisher controls_pub_;
-
-  ros::ServiceServer trigger_srv_;
   ros::ServiceServer params_srv_;
 
   geometry_msgs::Twist controls_;
 
   // Parameters
-  bool p_manual_controller_active_;
+  bool p_active_;
   bool p_use_joy_;
   bool p_use_keys_;
 
-  double p_k_v_;  // Linear velocity gain
-  double p_k_w_;  // Angular velocity gain
+  double p_linear_gain_;   // Linear velocity gain
+  double p_angular_gain_;  // Angular velocity gain
 };
 
 } // namespace mrop

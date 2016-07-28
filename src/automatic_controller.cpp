@@ -43,12 +43,12 @@ AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
     std_srvs::Trigger trig;
 
     updateParams(empt.request, empt.response);
-    p_automatic_controller_active_ = !p_automatic_controller_active_;
+    p_automatic_controller_active_ = !p_automatic_controller_active_; // Trigger switches the boolean
     trigger(trig.request, trig.response);
   }
 
-  trigger_srv_ = nh_.advertiseService("automatic_controller_trigger_srv", &AutomaticController::trigger, this);
-  params_srv_ = nh_.advertiseService("automatic_controller_params_srv", &AutomaticController::updateParams, this);
+  trigger_srv_ = nh_local_.advertiseService("trigger_srv", &AutomaticController::trigger, this);
+  params_srv_  = nh_local_.advertiseService("params_srv", &AutomaticController::updateParams, this);
 
   ROS_INFO("Automatic controller [OK]");
   ros::Rate rate(p_loop_rate_);
@@ -59,6 +59,8 @@ AutomaticController::AutomaticController() : nh_(""), nh_local_("~") {
     if (p_automatic_controller_active_) {
       computeControls();
       publishAll();
+
+      ROS_INFO_STREAM(p_k_p_);
     }
 
     rate.sleep();
@@ -83,6 +85,8 @@ void AutomaticController::refVelocityCallback(const geometry_msgs::Twist::ConstP
 
 bool AutomaticController::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
   p_automatic_controller_active_ = !p_automatic_controller_active_;
+  res.success = p_automatic_controller_active_;
+  nh_local_.setParam("automatic_controller_active", p_automatic_controller_active_);
 
   if (p_automatic_controller_active_) {
     pose_sub_ = nh_.subscribe<geometry_msgs::Pose2D>("pose", 5, &AutomaticController::poseCallback, this);
@@ -92,11 +96,6 @@ bool AutomaticController::trigger(std_srvs::Trigger::Request& req, std_srvs::Tri
     controls_pub_ = nh_.advertise<geometry_msgs::Twist>("controls", 5);
   }
   else {
-    controls_.linear.x = 0.0;
-    controls_.linear.y = 0.0;
-    controls_.angular.z = 0.0;
-    controls_pub_.publish(controls_);
-
     pose_sub_.shutdown();
     velocity_sub_.shutdown();
     ref_pose_sub_.shutdown();
@@ -104,14 +103,13 @@ bool AutomaticController::trigger(std_srvs::Trigger::Request& req, std_srvs::Tri
     controls_pub_.shutdown();
   }
 
-  res.success = p_automatic_controller_active_;
-
   return true;
 }
 
 bool AutomaticController::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
   nh_local_.param<bool>("automatic_controller_active", p_automatic_controller_active_, true);
   nh_local_.param<double>("loop_rate", p_loop_rate_, 100.0);
+  nh_local_.param<double>("gain", p_k_p_, 1.0);
 
   return true;
 }

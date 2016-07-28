@@ -1,13 +1,12 @@
 <!--  -->
 <launch>
   <node pkg="mrop" type="manual_controller" name="manual_controller" output="screen">
-     
-    <param name="manual_controller_active"   value="true"/>
-    <param name="use_keys"                   value="true"/>
-    <param name="use_joy"                    value="true"/>
+    <param name="active"        value="true"/>
+    <param name="use_keys"      value="true"/>
+    <param name="use_joy"       value="true"/>
 
-    <param name="linear_gain"                value="0.0"/>
-    <param name="angular_gain"               value="0.0"/>
+    <param name="linear_gain"   value="0.25"/>
+    <param name="angular_gain"  value="1.0"/>
   </node>
 </launch>
 

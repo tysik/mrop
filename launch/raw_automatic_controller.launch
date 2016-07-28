@@ -1,0 +1,9 @@
+<!--  -->
+<launch>
+  <node pkg="mrop" type="automatic_controller" name="automatic_controller" output="screen">
+    <param name="automatic_controller_active"   value="true"/>
+    <param name="loop_rate"                     value="100.0"/>
+    <param name="gain"                          value="1.0"/>
+  </node>
+</launch>
+

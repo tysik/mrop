@@ -38,70 +38,51 @@
 using namespace mrop;
 
 ManualController::ManualController() : nh_(""), nh_local_("~") {
-  {
-    std_srvs::Empty empt;
-    std_srvs::Trigger trig;
+  std_srvs::Empty empty;
+  updateParams(empty.request, empty.response);
 
-    updateParams(empt.request, empt.response);
-    p_manual_controller_active_ = !p_manual_controller_active_;
-    trigger(trig.request, trig.response);
-  }
-
-  trigger_srv_ = nh_.advertiseService("manual_controller_trigger_srv", &ManualController::trigger, this);
-  params_srv_ = nh_.advertiseService("manual_controller_params_srv", &ManualController::updateParams, this);
+  params_srv_  = nh_local_.advertiseService("params", &ManualController::updateParams, this);
 
   ROS_INFO("Manual controller [OK]");
   ros::spin();
 }
 
 void ManualController::joyCallback(const sensor_msgs::Joy::ConstPtr& joy_msg) {
-  if (p_use_joy_) {
-    controls_.linear.x = p_k_v_ * joy_msg->axes[1];
-    controls_.linear.y = p_k_v_ * joy_msg->axes[0];
-    controls_.angular.z = p_k_w_ * joy_msg->axes[2];
+  if (p_active_ && p_use_joy_) {
+    controls_.linear.x = p_linear_gain_ * joy_msg->axes[1];
+    controls_.linear.y = p_linear_gain_ * joy_msg->axes[0];
+    controls_.angular.z = p_angular_gain_ * joy_msg->axes[3];
     controls_pub_.publish(controls_);
   }
 }
 
 void ManualController::keysCallback(const geometry_msgs::Twist::ConstPtr& keys_msg) {
-  if (p_use_keys_) {
-    controls_.linear.x = p_k_v_ * keys_msg->linear.x;
-    controls_.linear.y = p_k_v_ * keys_msg->linear.y;
-    controls_.angular.z = p_k_w_ * keys_msg->angular.z;
+  if (p_active_ && p_use_keys_) {
+    controls_.linear.x = p_linear_gain_ * keys_msg->linear.x;
+    controls_.linear.y = p_linear_gain_ * keys_msg->linear.y;
+    controls_.angular.z = p_angular_gain_ * keys_msg->angular.z;
     controls_pub_.publish(controls_);
   }
 }
 
-bool ManualController::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
-  p_manual_controller_active_ = !p_manual_controller_active_;
+bool ManualController::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
+  nh_local_.param<bool>("active", p_active_, true);
+  nh_local_.param<bool>("use_joy", p_use_joy_, true);
+  nh_local_.param<bool>("use_keys", p_use_keys_, false);
 
-  if (p_manual_controller_active_) {
+  nh_local_.param<double>("linear_gain", p_linear_gain_, 0.25);
+  nh_local_.param<double>("angular_gain", p_angular_gain_, 1.0);
+
+  if (p_active_) {
     controls_pub_ = nh_.advertise<geometry_msgs::Twist>("controls", 5);
     joy_sub_ = nh_.subscribe<sensor_msgs::Joy>("joy", 5, &ManualController::joyCallback, this);
     keys_sub_ = nh_.subscribe<geometry_msgs::Twist>("keys", 5, &ManualController::keysCallback, this);
   }
   else {
-    controls_.linear.x = 0.0;
-    controls_.angular.z = 0.0;
-    controls_pub_.publish(controls_);
-
     controls_pub_.shutdown();
     joy_sub_.shutdown();
     keys_sub_.shutdown();
   }
-
-  res.success = p_manual_controller_active_;
-
-  return true;
-}
-
-bool ManualController::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
-  nh_local_.param<bool>("manual_controller_active", p_manual_controller_active_, true);
-  nh_local_.param<bool>("use_joy", p_use_joy_, true);
-  nh_local_.param<bool>("use_keys", p_use_keys_, false);
-
-  nh_local_.param<double>("linear_gain", p_k_v_, 0.25);
-  nh_local_.param<double>("angular_gain", p_k_w_, 1.0);
 
   return true;
 }
