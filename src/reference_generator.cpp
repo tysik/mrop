@@ -39,17 +39,10 @@ using namespace mrop;
 using namespace std;
 
 ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~") {
-  {
-    std_srvs::Empty empt;
-    std_srvs::Trigger trig;
+  std_srvs::Empty empt;
+  updateParams(empt.request, empt.response);
 
-    updateParams(empt.request, empt.response);
-    p_reference_generator_active_ = !p_reference_generator_active_;
-    trigger(trig.request, trig.response);
-  }
-
-  trigger_srv_ = nh_.advertiseService("reference_generator_trigger_srv", &ReferenceGenerator::trigger, this);
-  params_srv_ = nh_.advertiseService("reference_generator_params_srv", &ReferenceGenerator::updateParams, this);
+  params_srv_ = nh_local_.advertiseService("params", &ReferenceGenerator::updateParams, this);
 
   ROS_INFO("Reference generator [OK]");
   ros::Rate rate(p_loop_rate_);
@@ -58,7 +51,7 @@ ReferenceGenerator::ReferenceGenerator() : nh_(""), nh_local_("~") {
   while (nh_.ok()) {
     ros::spinOnce();
 
-    if (p_reference_generator_active_) {
+    if (p_active_) {
       double dt = (ros::Time::now() - time_stamp).toSec();
       time_stamp = ros::Time::now();
 
@@ -76,36 +69,11 @@ ReferenceGenerator::~ReferenceGenerator() {
   delete trajectory_;
 }
 
-bool ReferenceGenerator::trigger(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res) {
-  p_reference_generator_active_ = !p_reference_generator_active_;
-
-  if (p_reference_generator_active_) {
-    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>("reference_pose", 5);
-    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_velocity", 5);
-    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose_stamped", 5);
-  }
-  else {
-    p_paused_ = true;
-    p_stopped_ = true;
-
-    time_ = 0.0;
-    update(0.0);
-
-    pose_pub_.shutdown();
-    velocity_pub_.shutdown();
-    pose_stamped_pub_.shutdown();
-  }
-
-  res.success = p_reference_generator_active_;
-
-  return true;
-}
-
 bool ReferenceGenerator::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res) {
   nh_local_.param<string>("parent_frame", p_parent_frame_, "world");
   nh_local_.param<string>("child_frame", p_child_frame_, "reference");
 
-  nh_local_.param<bool>("reference_generator_active", p_reference_generator_active_, true);
+  nh_local_.param<bool>("active", p_active_, true);
   nh_local_.param<bool>("trajectory_paused", p_paused_, false);
   nh_local_.param<bool>("trajectory_stopped", p_stopped_, false);
 
@@ -141,6 +109,23 @@ bool ReferenceGenerator::updateParams(std_srvs::Empty::Request& req, std_srvs::E
     pause();
   else
     stop();
+
+  if (p_active_) {
+    pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>("reference_pose", 5);
+    velocity_pub_ = nh_.advertise<geometry_msgs::Twist>("reference_velocity", 5);
+    pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("reference_pose_stamped", 5);
+  }
+  else {
+    p_paused_ = true;
+    p_stopped_ = true;
+
+    time_ = 0.0;
+    update(0.0);
+
+    pose_pub_.shutdown();
+    velocity_pub_.shutdown();
+    pose_stamped_pub_.shutdown();
+  }
 
   return true;
 }

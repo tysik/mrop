@@ -19,8 +19,8 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${ARMADILLO_INCLUDE_DIRS} ${B
 add_executable(simulator src/simulator.cpp include/simulator.h)
 target_link_libraries(simulator ${catkin_LIBRARIES})
 
-#add_executable(reference_generator src/reference_generator.cpp include/reference_generator.h include/trajectories.h)
-#target_link_libraries(reference_generator ${catkin_LIBRARIES})
+add_executable(reference_generator src/reference_generator.cpp include/reference_generator.h include/trajectories.h)
+target_link_libraries(reference_generator ${catkin_LIBRARIES})
 
 add_executable(manual_controller src/manual_controller.cpp include/manual_controller.h)
 target_link_libraries(manual_controller ${catkin_LIBRARIES})

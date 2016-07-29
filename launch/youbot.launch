@@ -1,0 +1,33 @@
+<!-- Remote YouBot Launch File -->
+<launch>
+  <!-- ================ -->
+  <!-- Network Settings -->
+  <!-- ================ -->
+  <machine name="PC" user="$(env USER)" address="YouBotPC" env-loader="-d $(find mrop)/scripts/youbot_pc_env.sh" default="true"/>
+  <machine name="YB" user="youbot" address="YouBot" env-loader="/home/youbot/catkin_ws/src/mrop/scripts/youbot_env.sh"/>
+
+  <!-- Joystick -->
+  <node name="joy" pkg="joy" type="joy_node" output="screen" machine="PC">
+    <param name="dev" type="string" value="/dev/input/js0"/>
+    <param name="deadzone" value="0.0"/>
+    <param name="autorepeat_rate" value="0"/>
+  </node>
+
+  <!-- Optitrack -->
+  <node pkg="mocap_optitrack" type="mocap_node" name="mocap_node" respawn="false" launch-prefix="" required="true" machine="PC">
+    <rosparam file="$(find mocap_optitrack)/config/mocap.yaml" command="load" />
+  </node>
+
+  <!-- Manual controller -->
+  <node pkg="mrop" type="manual_controller" name="manual_controller" output="screen" machine="PC">
+    <param name="active"        value="true"/>
+    <param name="use_keys"      value="true"/>
+    <param name="use_joy"       value="true"/>
+
+    <param name="linear_gain"   value="0.25"/>
+    <param name="angular_gain"  value="1.0"/>
+
+    <remap from="controls" to="cmd_vel"/>
+  </node>
+</launch>
+

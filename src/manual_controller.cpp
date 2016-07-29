@@ -41,7 +41,7 @@ ManualController::ManualController() : nh_(""), nh_local_("~") {
   std_srvs::Empty empty;
   updateParams(empty.request, empty.response);
 
-  params_srv_  = nh_local_.advertiseService("params", &ManualController::updateParams, this);
+  params_srv_ = nh_local_.advertiseService("params", &ManualController::updateParams, this);
 
   ROS_INFO("Manual controller [OK]");
   ros::spin();

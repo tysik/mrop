@@ -77,25 +77,22 @@ bool Simulator::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Res
   if (p_loop_rate_ > 0.0) p_sampling_time_ = 1.0 / p_loop_rate_;
 
   if (p_time_delay_ > p_sampling_time_) {
-    lagged_pose_.assign(static_cast<int>(p_time_delay_ / p_sampling_time_), geometry_msgs::Pose2D());
-    lagged_velocity_.assign(static_cast<int>(p_time_delay_ / p_sampling_time_), geometry_msgs::Twist());
+    lagged_pose_.assign(static_cast<int>(p_time_delay_ / p_sampling_time_), pose_);
+    lagged_velocity_.assign(static_cast<int>(p_time_delay_ / p_sampling_time_), velocity_);
   }
   else  {
     lagged_pose_.assign(1, geometry_msgs::Pose2D());
     lagged_velocity_.assign(1, geometry_msgs::Twist());
   }
 
-  nh_local_.param<double>("initial_x", pose_.x, 0.0);
-  nh_local_.param<double>("initial_y", pose_.y, 0.0);
-  nh_local_.param<double>("initial_theta", pose_.theta, 0.0);
-
   if (p_active_) {
-    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>("scaled_controls", 5, &Simulator::controlsCallback, this);
+    controls_sub_ = nh_.subscribe<geometry_msgs::Twist>("controls", 5, &Simulator::controlsCallback, this);
     pose_pub_ = nh_.advertise<geometry_msgs::Pose2D>("virtual_pose", 5);
     velocity_pub_ = nh_.advertise<geometry_msgs::Twist>("virtual_velocity", 5);
     pose_stamped_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("virtual_pose_stamped", 5);
   }
   else {
+    controls_ = geometry_msgs::Twist();
     lagged_pose_.assign(lagged_pose_.size(), pose_);
     lagged_velocity_.assign(lagged_velocity_.size(), velocity_);
 
@@ -110,14 +107,15 @@ bool Simulator::updateParams(std_srvs::Empty::Request& req, std_srvs::Empty::Res
 
 void Simulator::computeVelocity() {
   velocity_.linear.x  += p_sampling_time_ / (p_sampling_time_ + p_time_constant_) * (controls_.linear.x - velocity_.linear.x);
+  velocity_.linear.y  += p_sampling_time_ / (p_sampling_time_ + p_time_constant_) * (controls_.linear.y - velocity_.linear.y);
   velocity_.angular.z += p_sampling_time_ / (p_sampling_time_ + p_time_constant_) * (controls_.angular.z - velocity_.angular.z);
 
   lagged_velocity_.push_back(velocity_);
 }
 
 void Simulator::computePose() {
-  pose_.x += p_sampling_time_ * velocity_.linear.x * cos(pose_.theta);
-  pose_.y += p_sampling_time_ * velocity_.linear.x * sin(pose_.theta);
+  pose_.x += p_sampling_time_ * (velocity_.linear.x * cos(pose_.theta) - velocity_.linear.y * sin(pose_.theta));
+  pose_.y += p_sampling_time_ * (velocity_.linear.x * sin(pose_.theta) + velocity_.linear.y * cos(pose_.theta));
   pose_.theta += p_sampling_time_ * velocity_.angular.z;
 
   lagged_pose_.push_back(pose_);

@@ -4,7 +4,7 @@
     <param name="parent_frame"           value="world"/>
     <param name="child_frame"            value="reference"/>
     
-    <param name="reference_generator_active" value="true"/>
+    <param name="active" value="true"/>
     <param name="trajectory_paused"      value="false"/>
     <param name="trajectory_stopped"     value="false"/>
 

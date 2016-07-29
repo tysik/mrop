@@ -9,10 +9,6 @@
     <param name="loop_rate"          value="100.0"/>    
     <param name="time_constant"      value="0.0"/>
     <param name="time_delay"         value="0.0"/>
-
-    <param name="initial_x"          value="0.0"/>
-    <param name="initial_y"          value="0.0"/>
-    <param name="initial_theta"      value="0.0"/>
   </node>
 </launch>
 
